@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Sample Chat Application</title>
+    <style>
+      html { font-family: sans-serif; }
+      .bottom-bar { position: fixed; left: 0; right: 0; bottom: 0; padding: 1em; background-color: #eee; }
+      .bottom-bar form { width: 100%; display: flex; justify-content: stretch; align-items: center; gap: 0.5em; }
+      .bottom-bar input, .bottom-bar button { padding: 1em; }
+      #messages { width: 100%; padding: 0; }
+      #messages li { list-style: none; padding: 1em; margin: 1em; border-radius: 1em; background-color: #eee; margin-right: 20%; }
+      #messages li.mine { background-color: #0077c8; color: white; margin-left: 20%; margin-right: 0; }
+    </style>
+  </head>
+  <body>
+    <!-- Will contain all the messages with each message being in its own <li> -->
+    <ul id="messages"></ul>
+
+    <!-- Contains the registration and send message forms -->
+    <div class="bottom-bar">
+      <!-- The username/registration form is shown first.-->
+      <form id="usernameForm" action="">
+        <input type="text" id="username" style="flex-grow: 1" />
+        <button type="submit">Register</button>
+      </form>
+      <!-- Once the user has registered, the send message form is shown. -->
+      <form id="messageForm" style="display: none" action="">
+        <input type="text" id="message" style="flex-grow: 1" />
+        <button type="submit">Send</button>
+      </form>
+    </div>
+
+    <!-- Load the Socket.IO library from their CDN. -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+      // Connect to the websocket server. By default, it will connect to the same
+      // host and port that the page was served from.
+      var socket = io();
+
+      // Keep track of the username so we can style our own messages differently.
+      let myUsername = null;
+
+      const usernameForm = document.getElementById("usernameForm");
+      const messageForm = document.getElementById("messageForm");
+
+      /**
+       * Adds a message to the chat.
+       * @param {string} username The username of the person who sent the message.
+       * @param {string} message The message that was sent.
+       */
+      function addMessage(username, message) {
+        var div = document.getElementById("messages");
+        var li = document.createElement("li");
+        li.innerHTML = `<strong>${username}</strong>: ${message}`;
+
+        // Make it blue if it's my own message
+        if (username === myUsername) {
+          li.classList.add("mine");
+        }
+
+        div.appendChild(li);
+      }
+
+      // When the server sends a message, add it to the chat.
+      socket.on("message", function ({ message, username }) {
+        addMessage(username, message);
+      });
+
+      /**
+       * Sends a message to the server and adds it to the chat
+       */
+      messageForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        const message = document.getElementById("message").value;
+        addMessage(myUsername, message);
+        socket.emit("sendMessage", { message });
+        document.getElementById("message").value = "";
+      });
+
+      /**
+       * Registers the username with the server, hides the registration form
+       * and shows the send message form.
+       */
+      usernameForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        myUsername = document.getElementById("username").value;
+        socket.emit("registerUsername", { username: myUsername });
+        document.getElementById("usernameForm").style.display = "none";
+        document.getElementById("messageForm").style.display = "flex";
+      });
+    </script>
+  </body>
+</html>
