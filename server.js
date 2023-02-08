@@ -13,11 +13,8 @@ const server = http.createServer(app);
 const io = new socket.Server(server);
 
 app.get("/", function (req, res) {
-  console.log("Homepage");
   res.sendFile(__dirname + "/index.html");
 });
-
-app.use("/static", express.static("node_modules"));
 
 io.on("connection", function (socket) {
   console.log("Client connected to socket");
@@ -26,7 +23,7 @@ io.on("connection", function (socket) {
   let username = "Anonymous";
 
   // Triggered when a client first registers their username
-  socket.on("registerUsername", function (msg) {
+  socket.on(“registerUsername”, function (msg) {
     username = msg.username;
   });
 
